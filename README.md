@@ -6,7 +6,7 @@
 
 En lloc d'anar saltant entre canals, avisos i fonts disperses, tens:
 
-- un **mapa en to fosc** de Barcelona amb incidències geolocalitzades,
+- un **mapa** de Barcelona amb incidències geolocalitzades,
 - una **vista executiva** amb els punts crítics del moment,
 - i un **assistent conversacional** que et respon en català amb context de ciutat.
 
@@ -39,7 +39,7 @@ Quan no hi ha una visió unificada:
 
 ## Com s'utilitza (experiència d'usuari)
 
-1. Entres a la pàgina i veus el mapa de Barcelona en mode fosc.
+1. Entres a la pàgina i veus el mapa de Barcelona.
 2. A la capçalera tens els indicadors de situació i els filtres de categoria.
 3. Actives o desactives capes segons la teva necessitat operativa.
 4. Cliques una incidència per veure'n el detall.
@@ -61,10 +61,6 @@ Permet passar de “tenir dades” a “tenir criteri operatiu”, amb una exper
 ## Estat actual del producte
 
 - Interfície en català.
-- Mapa interactiu de Barcelona en to fosc.
+- Mapa interactiu de Barcelona.
 - Capa d'assistent conversacional integrada.
 - Preparat per evolució cap a integracions de dades en temps real.
-
-## Contacte intern del projecte
-
-Si estàs validant aquest producte per a una prova pilot, aquest repositori és la base funcional per iterar casos d'ús, UX i integracions.
