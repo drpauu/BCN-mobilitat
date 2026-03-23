@@ -1,155 +1,70 @@
 ﻿# BCN Mobility Assistant
 
-Aplicació web de mobilitat urbana de Barcelona amb mapa interactiu en to fosc i assistent conversacional.
+## La mobilitat de Barcelona, en una sola pantalla
 
-## Què mostra la pàgina (segons la captura)
+**BCN Mobility Assistant** és una plataforma visual per entendre en segons què està passant a la ciutat i prendre decisions de mobilitat més intel·ligents.
 
-La interfície està pensada com un tauler operatiu d'una sola pantalla:
+En lloc d'anar saltant entre canals, avisos i fonts disperses, tens:
 
-- Mapa de Barcelona a pantalla completa en estil fosc.
-- Capçalera superior amb:
-  - Títol `BCN Mobility Assistant`.
-  - Data en català.
-  - Filtres de capa amb comptador: `Transit`, `Esdeveniments`, `Obres`, `Autobusos`, `Bicing`, `Accidents`.
-- Resum d'estat a la part superior dreta (`incidents actius`, `alta gravetat` i distribució per tipus).
-- Marcadors codificats per color i categoria; els incidents actius de gravetat alta mostren animació de pols.
-- Panell lateral dret `Assistent BCN` per fer consultes de mobilitat.
+- un **mapa en to fosc** de Barcelona amb incidències geolocalitzades,
+- una **vista executiva** amb els punts crítics del moment,
+- i un **assistent conversacional** que et respon en català amb context de ciutat.
 
-## Funcionalitats principals
+## Quin problema resol
 
-- Mapa base fosc de Barcelona amb càrrega ràpida.
-- Sistema de capes activables/desactivables en temps real.
-- Detall d'incidència en clicar un marcador (estat, gravetat, districte, carrers afectats i dates).
-- Assistent IA en català per consultar incidències i recomanacions de mobilitat.
-- Interfície responsive amb estil dark dashboard.
+La mobilitat urbana canvia constantment: obres, accidents, esdeveniments, canvis de bus o estacions de bicing saturades.
 
-## Arquitectura del projecte
+Quan no hi ha una visió unificada:
 
-Aquest repositori utilitza `src/` com a font canònica:
+- es perd temps,
+- es reacciona tard,
+- i es prenen decisions amb informació parcial.
 
-```text
-src/
-  app/
-    api/
-      basemap/[z]/[x]/[y]/route.ts
-      osm/[z]/[x]/[y]/route.ts
-      chat/route.ts
-    globals.css
-    layout.tsx
-    page.tsx
-  components/
-    map/
-      BCNMap.tsx
-      LayerToggle.tsx
-      StatsBar.tsx
-      ItemDetail.tsx
-    chat/
-      ChatPanel.tsx
-  data/
-    mobility.ts
-  lib/
-    utils.ts
-```
+**BCN Mobility Assistant** transforma aquesta complexitat en una lectura ràpida i accionable.
 
-## Dades
+## Per a qui està pensat
 
-- Font actual: `src/data/mobility.ts`.
-- Dataset sintètic validat: **55 incidències** dins dels límits de Barcelona.
-- Categories: trànsit, esdeveniments, obres, autobusos, bicing i accidents.
+- Equips d'operacions i mobilitat urbana.
+- Responsables de servei públic i coordinació territorial.
+- Centres de control, comunicació i atenció ciutadana.
+- Projectes smart city que necessiten una capa visual de decisió.
 
-## Mapa i rendiment
+## Què aporta la plataforma
 
-Per prioritzar una primera visualització ràpida del mapa:
+- **Visibilitat immediata**: estat global de la ciutat d'un cop d'ull.
+- **Priorització**: identificació ràpida de punts amb alta gravetat.
+- **Segmentació per capes**: trànsit, esdeveniments, obres, autobusos, bicing i accidents.
+- **Context operatiu**: detall per incidència (districte, carrers afectats, estat i franja temporal).
+- **Consulta natural**: preguntes en llenguatge natural a l'assistent per obtenir respostes útils i directes.
 
-- Font principal de tiles: CARTO dark directe (`a/b/c/d.basemaps.cartocdn.com`).
-- Fallback automàtic: `/api/basemap/{z}/{x}/{y}`.
-- Suport intern extra: `/api/osm/{z}/{x}/{y}`.
-- Estratègia de càrrega robusta: el mapa es considera llest amb `load`/`idle` o primer contingut de tile.
-- El xat es carrega en diferit (`dynamic import`) i inicialment queda tancat.
-- `preconnect`/`dns-prefetch` configurats al `layout` per reduir latència inicial de tiles.
+## Com s'utilitza (experiència d'usuari)
 
-## Requisits
+1. Entres a la pàgina i veus el mapa de Barcelona en mode fosc.
+2. A la capçalera tens els indicadors de situació i els filtres de categoria.
+3. Actives o desactives capes segons la teva necessitat operativa.
+4. Cliques una incidència per veure'n el detall.
+5. Si necessites una síntesi, ho preguntes al panell lateral de l'assistent.
 
-- Node.js 18.18+ (recomanat Node 20)
-- npm 9+
+## Exemples de valor real
 
-## Posada en marxa local
+- **Abans d'un gran esdeveniment**: anticipar zones amb tensió de mobilitat.
+- **Durant hora punta**: detectar i prioritzar incidències d'alta gravetat.
+- **Comunicació a ciutadania**: donar recomanacions coherents i contextualitzades.
+- **Coordinació interna**: alinear equips amb una mateixa foto de situació.
 
-```bash
-npm install
-```
+## Proposta de valor
 
-Crea l'entorn local:
+Aquesta solució no és només un mapa: és una **eina de decisió**.
 
-```powershell
-Copy-Item .env.example .env.local
-```
+Permet passar de “tenir dades” a “tenir criteri operatiu”, amb una experiència visual moderna, ràpida i pensada per a entorns reals de ciutat.
 
-Configura la clau dins `.env.local`:
+## Estat actual del producte
 
-```env
-OPENAI_API_KEY=sk-...
-```
+- Interfície en català.
+- Mapa interactiu de Barcelona en to fosc.
+- Capa d'assistent conversacional integrada.
+- Preparat per evolució cap a integracions de dades en temps real.
 
-Executa en desenvolupament:
+## Contacte intern del projecte
 
-```bash
-npm run dev
-```
-
-Obre `http://localhost:3000`.
-
-## Scripts disponibles
-
-- `npm run dev`: servidor de desenvolupament.
-- `npm run build`: build de producció.
-- `npm run start`: arrencada en mode producció.
-- `npm run lint`: lint amb Next.js.
-- `npm run build:admin-geojson`: script auxiliar de dades (`scripts/build-admin-geojson.cjs`).
-
-## API interna
-
-- `POST /api/chat`
-  - Entrada: historial de missatges.
-  - Sortida: resposta de l'assistent.
-  - Requereix `OPENAI_API_KEY`.
-
-- `GET /api/basemap/[z]/[x]/[y]`
-  - Proxy robust de tiles dark/OSM.
-  - Accepta `y` amb o sense `.png`.
-
-- `GET /api/osm/[z]/[x]/[y]`
-  - Proxy OSM pur com a suport.
-
-## Desplegament (Vercel)
-
-- No s'han de versionar artefactes de build (`.next`, `.next-local`).
-- El repositori ja inclou `.gitignore` i `.vercelignore` per evitar-ho.
-- Build recomanat:
-
-```bash
-npm run build
-```
-
-## Resolució de problemes habituals
-
-- `OPENAI_API_KEY no configurada`
-  - Revisa `.env.local` i reinicia el servidor.
-
-- `EADDRINUSE` en arrencar
-  - Ja hi ha un procés ocupant el port. Arrenca en un altre port:
-  - `npm run dev -- --port 3105`
-
-- Vols netejar la memòria cau de build local a Windows
-  - `Remove-Item -Recurse -Force .next-local, .next`
-
-## Stack tecnològic
-
-- Next.js 15 + React 19 + TypeScript
-- MapLibre GL
-- Tailwind CSS
-- OpenAI Chat Completions API
-
-## Llicència
-
-Projecte privat per defecte (`"private": true` a `package.json`).
+Si estàs validant aquest producte per a una prova pilot, aquest repositori és la base funcional per iterar casos d'ús, UX i integracions.
