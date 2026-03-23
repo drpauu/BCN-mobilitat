@@ -1,0 +1,31 @@
+   ▲ Next.js 15.1.0
+   - Local:        http://localhost:3100
+   - Network:      http://192.168.1.25:3100
+
+ ✓ Starting...
+ ✓ Ready in 7.7s
+ ○ Compiling / ...
+ ✓ Compiled / in 18.5s (651 modules)
+ ✓ Compiled in 2.2s (320 modules)
+ ✓ Compiled in 263ms (306 modules)
+ ✓ Compiled in 2.6s (320 modules)
+ ✓ Compiled in 2.8s (306 modules)
+ ✓ Compiled in 3.7s (320 modules)
+ ✓ Compiled in 1157ms (320 modules)
+ ✓ Compiled in 615ms (321 modules)
+ ✓ Compiled in 960ms (321 modules)
+ ✓ Compiled in 806ms (321 modules)
+ ✓ Compiled in 1833ms (320 modules)
+ ✓ Compiled in 1517ms (320 modules)
+ ✓ Compiled in 304ms (320 modules)
+ ⨯ ./src/data/mobility.ts
+Error: Failed to read source code from C:\Users\pau.alcazar\OneDrive - Accenture\Documents\bcn-mobility\src\data\mobility.ts
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Import trace for requested module:
+./src/data/mobility.ts
+./src/app/page.tsx
+ ✓ Compiled in 331ms (306 modules)
+ ✓ Compiled in 340ms (320 modules)
