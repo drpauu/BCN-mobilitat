@@ -1,20 +1,26 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { MapPin } from "lucide-react";
+import dynamic from "next/dynamic";
+import { MapPin, MessageCircle } from "lucide-react";
 import { mobilityData, layerConfig, type EventType, type MobilityItem } from "@/data/mobility";
 import { BCNMap } from "@/components/map/BCNMap";
 import { LayerToggle } from "@/components/map/LayerToggle";
 import { ItemDetail } from "@/components/map/ItemDetail";
 import { StatsBar } from "@/components/map/StatsBar";
-import { ChatPanel } from "@/components/chat/ChatPanel";
+
+const ChatPanel = dynamic(
+  () => import("@/components/chat/ChatPanel").then((mod) => mod.ChatPanel),
+  { ssr: false }
+);
 
 const ALL_LAYERS = new Set(Object.keys(layerConfig) as EventType[]);
 
 export default function HomePage() {
   const [visibleLayers, setVisibleLayers] = useState<Set<EventType>>(ALL_LAYERS);
   const [selectedItem, setSelectedItem] = useState<MobilityItem | null>(null);
-  const [chatOpen, setChatOpen] = useState(true);
+  const [chatLoaded, setChatLoaded] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const toggleLayer = useCallback((type: EventType) => {
     setVisibleLayers((prev) => {
@@ -30,6 +36,11 @@ export default function HomePage() {
 
   const handleMarkerClick = useCallback((item: MobilityItem) => {
     setSelectedItem((prev) => (prev?.id === item.id ? null : item));
+  }, []);
+
+  const openChat = useCallback(() => {
+    setChatLoaded(true);
+    setChatOpen(true);
   }, []);
 
   const counts = Object.keys(layerConfig).reduce(
@@ -92,14 +103,25 @@ export default function HomePage() {
           />
         </div>
 
-        {chatOpen && <div className="w-[376px] flex-shrink-0" />}
+        {chatLoaded && chatOpen && <div className="w-[376px] flex-shrink-0" />}
       </div>
 
       {selectedItem && (
         <ItemDetail item={selectedItem} onClose={() => setSelectedItem(null)} />
       )}
 
-      <ChatPanel isOpen={chatOpen} onToggle={() => setChatOpen((v) => !v)} />
+      {chatLoaded ? (
+        <ChatPanel isOpen={chatOpen} onToggle={() => setChatOpen((v) => !v)} />
+      ) : (
+        <button
+          type="button"
+          aria-label="Obrir assistent de mobilitat"
+          onClick={openChat}
+          className="fixed bottom-6 right-6 z-30 h-14 w-14 rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-700 to-blue-600 text-white shadow-2xl transition-transform hover:scale-105"
+        >
+          <MessageCircle className="m-auto h-6 w-6" />
+        </button>
+      )}
     </div>
   );
 }

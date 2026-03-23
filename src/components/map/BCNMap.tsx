@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
-import { MapPin } from "lucide-react";
 import type { EventType, MobilityItem } from "@/data/mobility";
 import { layerConfig, severityColors } from "@/data/mobility";
 
@@ -12,27 +11,42 @@ interface BCNMapProps {
   onMarkerClick: (item: MobilityItem) => void;
 }
 
-const DIRECT_OSM_TILES = [
-  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+const DIRECT_DARK_TILES = [
+  "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+  "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+  "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+  "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
 ];
-
-const PROXY_OSM_TILES = ["/api/osm/{z}/{x}/{y}"];
+const PROXY_DARK_TILES = ["/api/basemap/{z}/{x}/{y}"];
 
 type TileMode = "direct" | "proxy";
 type LoadState = "loading" | "ready" | "fallback" | "error";
 
 function createStyle(mode: TileMode): maplibregl.StyleSpecification {
+  const rasterPaint = mode === "direct"
+    ? {
+        // CARTO dark is already tuned, so keep a very soft correction.
+        "raster-saturation": -0.12,
+        "raster-contrast": 0.1,
+        "raster-brightness-min": 0.13,
+        "raster-brightness-max": 0.9,
+      }
+    : {
+        // Proxy might fallback to OSM, so keep stronger dark treatment.
+        "raster-saturation": -0.4,
+        "raster-contrast": 0.18,
+        "raster-brightness-min": 0.08,
+        "raster-brightness-max": 0.72,
+      };
+
   return {
     version: 8,
     sources: {
-      osm: {
+      basemap: {
         type: "raster",
-        tiles: mode === "direct" ? DIRECT_OSM_TILES : PROXY_OSM_TILES,
+        tiles: mode === "direct" ? DIRECT_DARK_TILES : PROXY_DARK_TILES,
         tileSize: 256,
-        attribution: "OpenStreetMap contributors",
+        attribution: "OpenStreetMap contributors, CARTO",
       },
     },
     layers: [
@@ -44,18 +58,12 @@ function createStyle(mode: TileMode): maplibregl.StyleSpecification {
         },
       },
       {
-        id: "osm",
+        id: "basemap",
         type: "raster",
-        source: "osm",
+        source: "basemap",
         minzoom: 0,
         maxzoom: 19,
-        paint: {
-          // Force a dark look even when the source is standard OSM tiles.
-          "raster-saturation": -0.78,
-          "raster-contrast": 0.28,
-          "raster-brightness-min": 0.05,
-          "raster-brightness-max": 0.46,
-        },
+        paint: rasterPaint,
       },
     ],
   };
@@ -144,7 +152,7 @@ export function BCNMap({ items, visibleLayers, onMarkerClick }: BCNMapProps) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [diagnostic, setDiagnostic] = useState<string | null>(null);
 
-  const currentModeLabel = tileMode === "direct" ? "OSM directe" : "OSM proxy";
+  const currentModeLabel = tileMode === "direct" ? "CARTO dark directe" : "Proxy /api/basemap";
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -193,18 +201,25 @@ export function BCNMap({ items, visibleLayers, onMarkerClick }: BCNMapProps) {
     };
 
     const handleSourceData = (event: maplibregl.MapSourceDataEvent) => {
-      if (event.sourceId !== "osm") return;
+      if (event.sourceId !== "basemap") return;
       if (event.sourceDataType === "content") {
         sawTileContentRef.current = true;
+        markReady();
+        return;
       }
-      if (!event.isSourceLoaded) return;
-      if (!sawTileContentRef.current) return;
-      markReady();
+      if (event.isSourceLoaded && map.areTilesLoaded()) {
+        markReady();
+      }
+    };
+
+    const handleLoad = () => {
+      if (map.isStyleLoaded()) {
+        markReady();
+      }
     };
 
     const handleIdle = () => {
-      if (!sawTileContentRef.current) return;
-      if (map.areTilesLoaded()) {
+      if (sawTileContentRef.current || map.areTilesLoaded()) {
         markReady();
       }
     };
@@ -215,22 +230,23 @@ export function BCNMap({ items, visibleLayers, onMarkerClick }: BCNMapProps) {
         event.error?.message ?? "No s'ha pogut carregar el mapa amb OpenStreetMap";
     };
 
+    map.on("load", handleLoad);
     map.on("sourcedata", handleSourceData);
     map.on("idle", handleIdle);
     map.on("error", handleError);
 
     // Keep the app responsive even if the network blocks one of the tile strategies.
-    const timeoutMs = tileMode === "direct" ? 4000 : 10000;
+    const timeoutMs = tileMode === "direct" ? 2800 : 6500;
     loadTimeoutRef.current = setTimeout(() => {
       if (!isReadyRef.current) {
         if (tileMode === "direct") {
-          setDiagnostic(lastErrorRef.current ?? "Temps d'espera superat amb OSM directe.");
+          setDiagnostic(lastErrorRef.current ?? "Temps d'espera superat amb mode directe.");
           setLoadState("fallback");
           setTileMode("proxy");
           return;
         }
 
-        setDiagnostic(lastErrorRef.current ?? "Temps d'espera superat amb OSM proxy.");
+        setDiagnostic(lastErrorRef.current ?? "Temps d'espera superat amb proxy.");
         setLoadState("error");
       }
     }, timeoutMs);
@@ -242,6 +258,7 @@ export function BCNMap({ items, visibleLayers, onMarkerClick }: BCNMapProps) {
         clearTimeout(loadTimeoutRef.current);
         loadTimeoutRef.current = null;
       }
+      map.off("load", handleLoad);
       map.off("sourcedata", handleSourceData);
       map.off("idle", handleIdle);
       map.off("error", handleError);
@@ -253,7 +270,7 @@ export function BCNMap({ items, visibleLayers, onMarkerClick }: BCNMapProps) {
   }, [tileMode, retryNonce]);
 
   useEffect(() => {
-    if (loadState !== "ready" || !mapRef.current) return;
+    if (!mapRef.current || loadState === "error") return;
 
     const map = mapRef.current;
 
@@ -303,18 +320,14 @@ export function BCNMap({ items, visibleLayers, onMarkerClick }: BCNMapProps) {
       <div ref={mapContainer} className="absolute inset-0" />
 
       {(loadState === "loading" || loadState === "fallback") && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[hsl(220_16%_8%)]/85 pointer-events-none">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative w-12 h-12">
-              <div className="absolute inset-0 rounded-full border-2 border-blue-500/30 animate-ping" />
-              <div className="absolute inset-2 rounded-full bg-blue-500/20 border border-blue-500/50" />
-              <MapPin className="absolute inset-0 m-auto w-5 h-5 text-blue-400" />
-            </div>
-            <div className="text-sm text-white/40 font-medium tracking-wide">
+        <div className="absolute top-4 right-4 z-20 pointer-events-none">
+          <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[hsl(220_16%_11%_/_0.85)] px-3 py-2 text-xs text-white/70 backdrop-blur-md">
+            <div className="h-3.5 w-3.5 animate-spin rounded-full border-[1.5px] border-blue-300/30 border-t-blue-300" />
+            <span>
               {loadState === "fallback"
-                ? "Canviant a mode proxy..."
-                : "Carregant el mapa..."}
-            </div>
+                ? "Canviant a proxy de seguretat..."
+                : "Carregant base map..."}
+            </span>
           </div>
         </div>
       )}
